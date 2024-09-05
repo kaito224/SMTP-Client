@@ -1,4 +1,7 @@
-from socket import *
+from socket import * # type: ignore
+import ssl
+
+
 
 # HELO command to initiate a converstaion with a smtp server and provide the server with own fqdn
 def helo_CMD(socket: socket, fqdn: str) -> str:
@@ -40,7 +43,7 @@ def data_CMD(socket: socket, message: str) -> str:
     """Send DATA command and return server response."""
 
     #send data command to see if server excepts data
-    socket.send(f"""DATA\r\n""".encode())
+    socket.sendall(f"""DATA\r\n""".encode())
     server_response = socket.recv(1024).decode()
     if server_response[:3] != '354':
         raise Exception(f"DATA command failed. The smtp server returned: {server_response}")
@@ -56,9 +59,31 @@ def data_CMD(socket: socket, message: str) -> str:
     return server_response
 
 
+# QUIT command. This command quits a smtp session
 def quit_CMD(socket: socket, ) -> str:
     """Send Quit FROM command and return server response."""
 
-    socket.send("QUIT".encode())
+    socket.send("QUIT\r\n".encode())
     server_response = socket.recv(1024).decode()
     return server_response
+
+
+# STARTTLS command. This command starts a tls/ssl session for smtp. Initiates the handshake
+def starttls_CDM(socket: socket, server_hostname: str) -> tuple[ssl.SSLSocket, str]:
+    """Starts TLS command and either returns (none,server message) or a the ssl-interface for the socket and the server message"""
+
+    # Ask for TLS/SSL capabilty by issuing starttls command
+    socket.send("STARTTLS\r\n".encode())
+    server_response = socket.recv(1024).decode()
+    if server_response[:3] != '220':
+        return (None, server_response)
+    
+    # # wait for server to be ready to start TLS/SSL handshake
+    # server_response = socket.recv(1024).decode()
+    # print(server_response)
+    
+    #create ssl socket
+    # TODO: put in try catch block
+    context = ssl.create_default_context()
+    ssl_socket =  context.wrap_socket(socket,server_hostname=server_hostname)
+    return (ssl_socket, server_response)
