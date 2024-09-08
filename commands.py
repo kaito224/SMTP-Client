@@ -1,6 +1,6 @@
 from socket import * # type: ignore
 import ssl
-
+import base64
 
 
 # HELO command to initiate a converstaion with a smtp server and provide the server with own fqdn
@@ -14,8 +14,13 @@ def helo_CMD(socket: socket, fqdn: str) -> str:
 
 
 # ELHO command
-def elho_CMD(socket: socket, fqdn: str) -> str:
-    return "not implemented yet"
+def ehlo_CMD(socket: socket, fqdn: str) -> str:
+    """Send EHLO command and returns server response."""
+
+    heloCommand = 'EHLO fqdn\r\n'
+    socket.send(heloCommand.encode())
+    server_response = socket.recv(1024).decode()
+    return server_response
 
 
 # MAIL command. This command states the reverse_path for a mail i.e. the sender address
@@ -43,16 +48,15 @@ def data_CMD(socket: socket, message: str) -> str:
     """Send DATA command and return server response."""
 
     #send data command to see if server excepts data
-    socket.sendall(f"""DATA\r\n""".encode())
+    socket.send("DATA\r\n".encode())
     server_response = socket.recv(1024).decode()
     if server_response[:3] != '354':
         raise Exception(f"DATA command failed. The smtp server returned: {server_response}")
     
     # Send message data
-    # TODO: implement dot-stuffing
+    # TODO: implement dot-stuffing and check if sending data was successfull
     endmsg = "\r\n.\r\n"
-    socket.sendall(( message + endmsg ).encode())
-
+    socket.sendall( message.encode() + endmsg.encode() )
     server_response = socket.recv(1024).decode()
     # if server_response[:3] != '250':
     #     raise Exception(f"text transfer failed. The smtp server returned: {server_response}")
@@ -60,7 +64,7 @@ def data_CMD(socket: socket, message: str) -> str:
 
 
 # QUIT command. This command quits a smtp session
-def quit_CMD(socket: socket, ) -> str:
+def quit_CMD(socket: socket) -> str:
     """Send Quit FROM command and return server response."""
 
     socket.send("QUIT\r\n".encode())
@@ -77,13 +81,42 @@ def starttls_CDM(socket: socket, server_hostname: str) -> tuple[ssl.SSLSocket, s
     server_response = socket.recv(1024).decode()
     if server_response[:3] != '220':
         return (None, server_response)
-    
-    # # wait for server to be ready to start TLS/SSL handshake
-    # server_response = socket.recv(1024).decode()
-    # print(server_response)
-    
+        
     #create ssl socket
     # TODO: put in try catch block
     context = ssl.create_default_context()
     ssl_socket =  context.wrap_socket(socket,server_hostname=server_hostname)
     return (ssl_socket, server_response)
+
+
+# AUTH command which uses the SASL-PLAIN mechanism. This command quits a smtp session
+def authPlain_CMD(socket: socket, username, password) -> str:
+    """Send auth command using the SASL-PLAIN mechanism and return server response."""
+
+    base64_str = ("\x00" + username + "\x00" + password).encode()
+    base64_str = base64.b64encode(base64_str)
+    authMsg = "AUTH PLAIN ".encode() + base64_str + " \r\n".encode()
+    print(authMsg)
+    socket.send(authMsg)
+    server_response = socket.recv(1024).decode()
+    return server_response
+
+
+# AUTH command which uses the SASL-LOGIN mechanism. This command quits a smtp session
+def authLogin_CMD(socket: socket, username, password) -> str:
+    """Send auth command using the SASL-LOGIN mechanism and return server response."""
+
+    #TODO Check each server responses. They are base64 encoded.
+    # Some Logins only require a password
+    socket.send("AUTH LOGIN \r\n".encode())
+    server_response = socket.recv(1024).decode()
+
+    socket.send(base64.b64encode(username.encode(encoding="ascii")))
+    socket.send("\r\n".encode())
+    server_response = socket.recv(1024).decode()
+
+    socket.send(base64.b64encode(password.encode(encoding="ascii")))
+    socket.send("\r\n".encode())
+    server_response = socket.recv(1024).decode()
+
+    return server_response
