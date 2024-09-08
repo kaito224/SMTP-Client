@@ -89,7 +89,7 @@ def starttls_CDM(socket: socket, server_hostname: str) -> tuple[ssl.SSLSocket, s
     return (ssl_socket, server_response)
 
 
-# AUTH command which uses the SASL-PLAIN mechanism. This command quits a smtp session
+# AUTH command which uses the SASL-PLAIN mechanism.
 def authPlain_CMD(socket: socket, username, password) -> str:
     """Send auth command using the SASL-PLAIN mechanism and return server response."""
 
@@ -102,7 +102,7 @@ def authPlain_CMD(socket: socket, username, password) -> str:
     return server_response
 
 
-# AUTH command which uses the SASL-LOGIN mechanism. This command quits a smtp session
+# AUTH command which uses the SASL-LOGIN mechanism.
 def authLogin_CMD(socket: socket, username, password) -> str:
     """Send auth command using the SASL-LOGIN mechanism and return server response."""
 
