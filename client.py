@@ -17,7 +17,7 @@ def main():
     RECIPIENTS = args.recipients
     FQDN = args.fqdn if args.fqdn is not None else ""
     SUBJECT = " ".join(args.subject) if args.subject is not None else ""
-    TXTMESSAGE = args.text
+    TXTMESSAGE = " ".join(args.text) if args.text is not None else ""
 
     #open socket and create a tcp connection
     with socket(AF_INET, SOCK_STREAM) as clientSocket:
