@@ -96,7 +96,6 @@ def authPlain_CMD(socket: socket, username, password) -> str:
     base64_str = ("\x00" + username + "\x00" + password).encode()
     base64_str = base64.b64encode(base64_str)
     authMsg = "AUTH PLAIN ".encode() + base64_str + " \r\n".encode()
-    print(authMsg)
     socket.send(authMsg)
     server_response = socket.recv(1024).decode()
     return server_response
