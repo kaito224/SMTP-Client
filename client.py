@@ -4,6 +4,17 @@ import argparse
 import getpass
 
 
+def authenticate(socket: socket, username:str, password, authentication_method = "LOGIN"):
+    #TODO : Handle more SAS login methods
+
+    if authentication_method == "LOGIN":
+        return authLogin_CMD(socket, username, password)
+
+    if authentication_method == "PLAIN":
+        return authPlain_CMD(socket, username, password)
+    
+    raise Exception("authentication method did not match implemented methods")
+
 
 def main():
 
@@ -18,6 +29,7 @@ def main():
     FQDN = args.fqdn if args.fqdn is not None else ""
     SUBJECT = " ".join(args.subject) if args.subject is not None else ""
     TXTMESSAGE = " ".join(args.text) if args.text is not None else ""
+    AUTHENTICATION_METHOD = args.authentication_method
 
     #open socket and create a tcp connection
     with socket(AF_INET, SOCK_STREAM) as clientSocket:
@@ -56,18 +68,23 @@ def main():
                 print("In order to send the sender and recipients must be defined")
                 return
             
-            #login
-            #TODO : Write function which handles different SAS login methods
-            #TODO : Return when login was not successfull
+            #authentication
+            if USERNAME is None:
+                print("A username must be defined to authenticate to a server")
+                return
             if PASSWORD is None:
                 PASSWORD = getpass.getpass("Password: ")
-            server_message_login = authLogin_CMD(sslClientSocket, username=USERNAME, password=PASSWORD)
-            print(server_message_login)
+            server_message_authentication = authenticate(clientSocket, USERNAME, PASSWORD, AUTHENTICATION_METHOD)
+            if server_message_authentication[:3] != "235" : 
+                print(f"""Could not authenticate got server error: {server_message_authentication}""")
+                return
+            
             #mail
             #TODO : Check responses
             mail_CMD(clientSocket, SENDER)
             for recipient in RECIPIENTS:
                 rcpt_CMD(clientSocket, recipient)
+
             #data
             #TODO : message constructor which adds each recipient and allows for attachments
             message = message=f"""From: {SENDER}\r\nTo: {RECIPIENTS[0]}\r\nSubject: {SUBJECT}\r\n\r\n{TXTMESSAGE}"""
@@ -92,6 +109,10 @@ if __name__ == "__main__":
     parser.add_argument("server_adress", 
                         help="The Adress of the smtp server. Either IPv4 Adress or its domain name")
     
+    parser.add_argument("-no-ssl",
+                        help="Do not use ssl/tls when connecting to a mailserver", 
+                        action="store_true")
+    
     parser.add_argument("--port",
                         type=int,
                         default=587,
@@ -99,10 +120,6 @@ if __name__ == "__main__":
 
     parser.add_argument("--fqdn",
                         help="Defines the fully qualified domain name (FQDN) to give  to the smt server")
-
-    parser.add_argument("-no-ssl",
-                        help="Do not use ssl/tls when connecting to a mailserver", 
-                        action="store_true")
 
     parser.add_argument("-u", 
                         "--username", 
@@ -127,6 +144,11 @@ if __name__ == "__main__":
     parser.add_argument("--text",
                         nargs="+",
                         help="The text to send")
+    
+    parser.add_argument("--authentication-method",
+                        choices=["LOGIN", "PLAIN"],
+                        default = "LOGIN",
+                        help="Chose a SASL method for authentication. Login is set as default")
 
 
     #call main
