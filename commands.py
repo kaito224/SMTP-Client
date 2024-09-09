@@ -73,7 +73,7 @@ def quit_CMD(socket: socket) -> str:
 
 
 # STARTTLS command. This command starts a tls/ssl session for smtp. Initiates the handshake
-def starttls_CDM(socket: socket, server_hostname: str) -> tuple[ssl.SSLSocket, str]:
+def starttls_CDM(socket: socket, server_hostname: str): #-> tuple[ssl.SSLSocket, str]:
     """Starts TLS command and either returns (none,server message) or a the ssl-interface for the socket and the server message"""
 
     # Ask for TLS/SSL capabilty by issuing starttls command
