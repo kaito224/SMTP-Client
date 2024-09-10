@@ -2,6 +2,8 @@ from socket import * # type: ignore
 import ssl
 import base64
 
+#TODO: Encoding ascii/utf-8
+#TODO: Add verbosity option
 
 # HELO command to initiate a converstaion with a smtp server and provide the server with own fqdn
 def helo_CMD(socket: socket, fqdn: str) -> str:
@@ -49,18 +51,18 @@ def data_CMD(socket: socket, message: str) -> str:
 
     #send data command to see if server excepts data
     socket.send("DATA\r\n".encode())
-    server_response = socket.recv(1024).decode()
-    if server_response[:3] != '354':
-        raise Exception(f"DATA command failed. The smtp server returned: {server_response}")
+    server_response_datacommand = socket.recv(1024).decode()
+    if server_response_datacommand[:3] != '354':
+        raise Exception(f"DATA command failed. The smtp server returned: {server_response_datacommand}")
     
     # Send message data
     # TODO: implement dot-stuffing and check if sending data was successfull
     endmsg = "\r\n.\r\n"
     socket.sendall( message.encode() + endmsg.encode() )
-    server_response = socket.recv(1024).decode()
-    # if server_response[:3] != '250':
-    #     raise Exception(f"text transfer failed. The smtp server returned: {server_response}")
-    return server_response
+    server_response_datatransfer = socket.recv(1024).decode()
+    if server_response_datatransfer[:3] != '250':
+        raise Exception(f"Data transfer failed. The smtp server returned: {server_response_datatransfer}")
+    return server_response_datatransfer
 
 
 # QUIT command. This command quits a smtp session
@@ -109,12 +111,13 @@ def authLogin_CMD(socket: socket, username, password) -> str:
     # Some Logins only require a password
     socket.send("AUTH LOGIN \r\n".encode())
     server_response = socket.recv(1024).decode()
+    if server_response[:3] != "334": return server_response # return faulty login
 
-    socket.send(base64.b64encode(username.encode(encoding="ascii")))
+    socket.send(base64.b64encode(username.encode()))
     socket.send("\r\n".encode())
     server_response = socket.recv(1024).decode()
 
-    socket.send(base64.b64encode(password.encode(encoding="ascii")))
+    socket.send(base64.b64encode(password.encode()))
     socket.send("\r\n".encode())
     server_response = socket.recv(1024).decode()
 
