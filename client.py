@@ -149,11 +149,11 @@ def main():
 if __name__ == "__main__":
 
     #Create ArgumentParser
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument("method",
                         choices=["send", "ehlo", "healthcheck"],
-                        help="Send: Send a mail/nEHlo:ends an EHLO to the smtp server and prints all extensions")
+                        help="send: Send a mail\nehlo: sends an EHLO to the smtp server and prints all extensions. Extensions may differ when using ssl\nhealthcheck: Prints the initial message the smtp server sends on connecting via tcp ")
     
     parser.add_argument("server_adress", 
                         help="The Adress of the smtp server. Either IPv4 Adress or its domain name")
@@ -184,8 +184,7 @@ if __name__ == "__main__":
 
     parser.add_argument("-pw", 
                         "--password", 
-                        help=f"""Defines the password to use if the smtp server supports. This option is unsafe as the password is given in blank.
-                        We highly advise againts this option. The script will ask for the password interactively if this option is omitted """)
+                        help=f"""Defines the password to use if the smtp server supports.\nThis option is unsafe as the password is shown in plain.\nThe script will ask for the password interactively if this option is omitted """)
 
     parser.add_argument("--sender",
                         help="The email adress of the sender")
