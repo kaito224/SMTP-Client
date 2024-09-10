@@ -71,7 +71,15 @@ def main():
         if server_message_innit[:3] != '220':
             print(f"""220 reply not received from server: {MAILSERVER}""")
             return
-        helo_CMD(clientSocket, FQDN) #send initial hello
+        
+        #return after healthcheck if specified
+        if METHOD == "healthcheck": 
+            print(server_message_innit)
+            clientSocket.close()
+            return
+        
+        #send initial hello message
+        helo_CMD(clientSocket, FQDN)
 
         #start ssl
         if not args.no_ssl:
@@ -84,10 +92,6 @@ def main():
             clientSocket = sslClientSocket
         
         #method logic
-        if METHOD == "healthcheck":
-            print(server_message_innit)
-            clientSocket.close()
-            return
 
         if METHOD == "ehlo":
             print(ehlo_CMD(clientSocket, FQDN))
@@ -153,7 +157,7 @@ if __name__ == "__main__":
 
     parser.add_argument("method",
                         choices=["send", "ehlo", "healthcheck"],
-                        help="send: Send a mail\nehlo: sends an EHLO to the smtp server and prints all extensions. Extensions may differ when using ssl\nhealthcheck: Prints the initial message the smtp server sends on connecting via tcp ")
+                        help="send: Send a mail\nehlo: sends an EHLO to the smtp server and prints all extensions. Extensions may differ when using ssl\nhealthcheck: Prints the initial message from the server. Does not establish ssl connection")
     
     parser.add_argument("server_adress", 
                         help="The Adress of the smtp server. Either IPv4 Adress or its domain name")
