@@ -9,7 +9,7 @@ import base64
 def helo_CMD(socket: socket, fqdn: str) -> str:
     """Send HELO command and returns server response."""
 
-    heloCommand = 'HELO fqdn\r\n'
+    heloCommand = f"""HELO {fqdn}\r\n"""
     socket.send(heloCommand.encode())
     server_response = socket.recv(1024).decode()
     return server_response
@@ -19,7 +19,7 @@ def helo_CMD(socket: socket, fqdn: str) -> str:
 def ehlo_CMD(socket: socket, fqdn: str) -> str:
     """Send EHLO command and returns server response."""
 
-    heloCommand = 'EHLO fqdn\r\n'
+    heloCommand = f"""EHLO {fqdn}\r\n"""
     socket.send(heloCommand.encode())
     server_response = socket.recv(1024).decode()
     return server_response
