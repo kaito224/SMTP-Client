@@ -64,13 +64,14 @@ def main():
     #open socket and create a tcp connection
     with socket(AF_INET, SOCK_STREAM) as clientSocket:
         
-        #connect to mailswerver and wait for innit message
+        #connect to mailserver and wait for innit message
         clientSocket.connect(MAILSERVER)
+        if VERBOSE: print(f"""Opened tcp socket and sucessfully connected to mailserver: {MAILSERVER}""")
         server_message_innit = clientSocket.recv(1024).decode()
         if server_message_innit[:3] != '220':
             print(f"""220 reply not received from server: {MAILSERVER}""")
             return
-        helo_CMD(clientSocket, FQDN)
+        helo_CMD(clientSocket, FQDN) #send initial hello
 
         #start ssl
         if not args.no_ssl:
@@ -78,7 +79,7 @@ def main():
             if sslClientSocket is None:
                 print(f"""Could not establish tls connection got error: {server_message_ssl}""")
                 return
-            if VERBOSE: print("SSL connection has been successfully established")
+            if VERBOSE: print(f"SSL connection has been successfully established")
             helo_CMD(sslClientSocket, FQDN)# I dont know why but you have to send a helo after establishing a ssl/tls connection
             clientSocket = sslClientSocket
         
@@ -105,22 +106,26 @@ def main():
             if PASSWORD is None:
                 PASSWORD = getpass.getpass("Password: ")
 
+            if VERBOSE: print("Starting Authentification......")
             server_message_authentication = authenticate(clientSocket, USERNAME, PASSWORD, AUTHENTICATION_METHOD)
             if server_message_authentication[:3] != "235" : 
                 print(f"""Could not authenticate. Got server error: {server_message_authentication}""")
                 return
+            if VERBOSE: print(f"""Authentification was successfull. Got server message: {server_message_authentication}""")
             
             #mail
             server_message_mail = mail_CMD(clientSocket, SENDER)
             if server_message_mail[:3] != "250":
                 print(f"""Mail command failed. Got server error: {server_message_mail}""")
                 return
+            if VERBOSE: print(f"""Sucessfully send Mail command (from {SENDER}). Got server message: {server_message_mail}""")
             
             for recipient in RECIPIENTS:
                 server_message_rcpt = rcpt_CMD(clientSocket, recipient)
                 if server_message_rcpt[:3] != "250":
                     print(f"""RCPT command failed for {recipient}. Got server error: {server_message_rcpt}""")
                     return
+                if VERBOSE: print(f"""Sucessfully send RCPT command for recipient: {recipient}. Got server message: {server_message_mail}""")
 
             #data
             if args.no_mime:
