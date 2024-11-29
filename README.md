@@ -1,7 +1,7 @@
 
 # SMTP Client
 
-A small SMTP-client written in python.
+A simple SMTP-client written in python using sockets instead of smtplib.
 
 
 ## Requirements
